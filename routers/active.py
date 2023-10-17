@@ -8,7 +8,6 @@ with open(os.path.join(dir_path, "../data/data_active.json"), "r") as f:
 
 router = APIRouter()
 
-
 @router.get("/active")
 async def get_active():
     return data 
