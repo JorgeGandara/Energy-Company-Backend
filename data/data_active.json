@@ -1,0 +1,17 @@
+[
+    {
+        "id": 1,
+        "name": "Edificio 1",
+        "status": "True"
+    },
+    {
+        "id": 2,
+        "name": "Carro taller",
+        "status": "False"
+    },
+    {
+        "id": 3,
+        "name": "Generador eólico",
+        "status": "True"
+    }
+]

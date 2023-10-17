@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "name": "Jorge Gandara",
+        "phone": "123456789",
+        "email": "gandaraj@utb.edu.co"
+    },
+    {
+        "id": 2,
+        "name": "Alex Gutierrez",
+        "phone": "987654321",
+        "email": "alex@utb.edu.co"
+    },
+    {
+        "id": 3,
+        "name": "Paula Marquez",
+        "phone": "2468013579",
+        "email": "Paula@utb.edu.co"
+    }
+]
