@@ -1,7 +1,7 @@
 from .Person import Person
 
 class Client(Person):
-    def __init__(self, id: int = 0, name: str = "Name", phone: bool = False, email: str = "name@domain", city: str = "City", neigborhood: str = "neigborhood", address: str = "address", kw: float = 0.0) -> None:
+    def __init__(self, id: int = 0, name: str = "Name", phone: int = 0, email: str = "name@domain", city: str = "City", neigborhood: str = "neigborhood", address: str = "address", kw: float = 0.0) -> None:
         super().__init__(id, name, phone, email, city, neigborhood, address)
         self._kw = kw
     @property

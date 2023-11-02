@@ -8,19 +8,19 @@ from typing import List
 
 router = APIRouter()
 
-@router.get("/vehicle", response_model=List[VehicleSchema])
+@router.get("/", response_model=List[VehicleSchema])
 async def get_all_vehicle():
     with engine.connect() as conn:
         query = vehicle.select()
         return conn.execute(query).fetchall()
     
-@router.get("/vehicle/{idvehicle}", response_model=VehicleSchema)
+@router.get("/{idvehicle}", response_model=VehicleSchema)
 async def get_vehicle(idvehicle: int):
     with engine.connect() as conn:
         query = vehicle.select().where(vehicle.c.idvehicle == idvehicle)
         return conn.execute(query).first()
     
-@router.post("/vehicle", status_code=HTTP_201_CREATED)
+@router.post("/", status_code=HTTP_201_CREATED)
 async def create_vehicle(data_vehicle: VehicleSchema):
     with engine.connect() as conn:
         new_vehicle = data_vehicle.model_dump()
@@ -28,7 +28,7 @@ async def create_vehicle(data_vehicle: VehicleSchema):
         conn.commit()
         return Response(status_code=HTTP_201_CREATED)
 
-@router.put("/vehicle/{idvehicle}", response_model=VehicleSchema)
+@router.put("/{idvehicle}", response_model=VehicleSchema)
 async def update_vehicle(idvehicle: int, data_vehicle: VehicleSchema):
     with engine.connect() as conn:
         query = vehicle.update().where(vehicle.c.idvehicle == idvehicle).values(data_vehicle.model_dump())
@@ -36,7 +36,7 @@ async def update_vehicle(idvehicle: int, data_vehicle: VehicleSchema):
         conn.commit()
         return {"message": "Vehicle updated successfully"}
 
-@router.delete("/vehicle/{idvehicle}", status_code=HTTP_204_NO_CONTENT)
+@router.delete("/{idvehicle}", status_code=HTTP_204_NO_CONTENT)
 async def delete_vehicle(idvehicle: int):
     with engine.connect() as conn:
         query = vehicle.delete().where(vehicle.c.idvehicle == idvehicle)
