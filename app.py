@@ -10,7 +10,7 @@ app = FastAPI()
 async def main():
     return {"message": "/docs"}
 
-app.include_router(ClientRouter, prefix="/client", tags=["client"])
-app.include_router(EmployeeRouter, prefix="/employee", tags=["employee"])
-app.include_router(VehicleRouter, prefix="/vehicle", tags=["vehicle"])
-app.include_router(CutRouter, prefix="/cut", tags=["cut"])
+app.include_router(ClientRouter, prefix="/client", tags=["Client"])
+app.include_router(EmployeeRouter, prefix="/employee", tags=["Employee"])
+app.include_router(VehicleRouter, prefix="/vehicle", tags=["Vehicle"])
+app.include_router(CutRouter, prefix="/cut", tags=["Cut"])
