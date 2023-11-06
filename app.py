@@ -3,6 +3,9 @@ from routers.vehicle import router as VehicleRouter
 from routers.client import router as ClientRouter
 from routers.employee import router as EmployeeRouter
 from routers.cut import router as CutRouter
+from routers.state import router as StateRouter
+from routers.building import router as BuildingRouter
+from routers.generator import router as GeneratorRouter
 
 app = FastAPI()
 
@@ -12,5 +15,8 @@ async def main():
 
 app.include_router(ClientRouter, prefix="/client", tags=["Client"])
 app.include_router(EmployeeRouter, prefix="/employee", tags=["Employee"])
-app.include_router(VehicleRouter, prefix="/vehicle", tags=["Vehicle"])
 app.include_router(CutRouter, prefix="/cut", tags=["Cut"])
+app.include_router(StateRouter, prefix="/state", tags=["State"])
+app.include_router(VehicleRouter, prefix="/vehicle", tags=["Vehicle"])
+app.include_router(BuildingRouter, prefix="/building", tags=["Building"])
+app.include_router(GeneratorRouter, prefix="/generator", tags=["Generator"])
