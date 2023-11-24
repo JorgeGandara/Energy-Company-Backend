@@ -1,66 +1,75 @@
 from sqlalchemy import Table, Column
-from sqlalchemy.sql.sqltypes import Integer, VARCHAR, Float, Boolean
-from config.db import engine, meta_data
+from sqlalchemy.sql.sqltypes import Integer, VARCHAR, Float, Boolean, String
+from config.db import Base, engine
 
-client = Table("client", meta_data,
-    Column("idclient", Integer, primary_key=True, autoincrement=True),
-    Column("name", VARCHAR(00)),
-    Column("phone", Integer),
-    Column("email", VARCHAR(80)),
-    Column("city", VARCHAR(45)),
-    Column("neighborhood", VARCHAR(45)),
-    Column("address", VARCHAR(45)),
-    Column("kw", Float)
-)
+class Client(Base):
+    __tablename__ = 'client'
 
-employee = Table("employee", meta_data,
-    Column("idemployee", Integer, primary_key=True, autoincrement=True),
-    Column("name", VARCHAR(100)),
-    Column("phone", Integer),
-    Column("email", VARCHAR(80)),
-    Column("city", VARCHAR(45)),
-    Column("neighborhood", VARCHAR(45)),
-    Column("address", VARCHAR(45)),
-    Column("salary", Float),
-)
+    idclient = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String)
+    phone = Column(Integer)
+    email = Column(Integer)
+    city = Column(Integer)
+    neighborhood = Column(Integer)
+    address = Column(Integer)
+    kw = Column(Float)
 
-cut = Table("cut", meta_data,
-    Column("idcut", Integer, primary_key=True, autoincrement=True),
-    Column("date", VARCHAR(10)),
-    Column("hour", VARCHAR(10)),
-    Column("city", VARCHAR(45)),
-    Column("neighborhood", VARCHAR(45)),
-)
+class Vehicle(Base):
+    __tablename__ = 'vehicle'
 
-state = Table("state", meta_data,
-    Column("idstate", Integer, primary_key=True, autoincrement=True),
-    Column("date", VARCHAR(10)),
-    Column("hour", VARCHAR(10)),
-    Column("description", VARCHAR(100)),
-)
+    idvehicle = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String)
+    status = Column(Integer)
+    type = Column(Integer)
+    km = Column(Float)
+    function = Column(Integer)
 
-vehicle = Table("vehicle", meta_data,
-    Column("idvehicle", Integer, primary_key=True, autoincrement=True),
-    Column("name", VARCHAR(45)),
-    Column("status", Boolean, nullable=False),
-    Column("type", VARCHAR(45)),
-    Column("km", Float),
-    Column("function", VARCHAR(100))
-)
+class Employee(Base):
+    __tablename__ = 'employee'
 
-building = Table("building", meta_data,
-    Column("idbuilding", Integer, primary_key=True, autoincrement=True),
-    Column("name", VARCHAR(45)),
-    Column("status", Boolean, nullable=False),
-    Column("phone", Integer),
-)
+    idemployee = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String)
+    phone = Column(Integer)
+    email = Column(Integer)
+    city = Column(Integer)
+    neighborhood = Column(Integer)
+    address = Column(Integer)
+    salary = Column(Float)
 
-generator = Table("generator", meta_data,
-    Column("idgenerator", Integer, primary_key=True, autoincrement=True),
-    Column("name", VARCHAR(45)),
-    Column("status", Boolean, nullable=False),
-    Column("eco", Integer),
-    Column("power", Float),
-)
+class Cut(Base):
+    __tablename__ = 'cut'
 
-meta_data.create_all(engine)
+    idcut = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    date = Column(String)
+    hour = Column(String)
+    city = Column(String)
+    neighborhood = Column(String)
+
+class State(Base):
+    __tablename__ = 'state'
+
+    idstate = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    date = Column(String)
+    hour = Column(String)
+    description = Column(String)
+
+class Building(Base):
+    __tablename__ = 'building'
+
+    idbuilding = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String)
+    status = Column(Integer)
+    phone = Column(Integer)
+
+class Generator(Base):
+    __tablename__ = 'generator'
+
+    idgenerator = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String)
+    status = Column(Integer)
+    eco = Column(Integer)
+    power = Column(Float)
+
+Base.metadata.create_all(bind=engine)
+
+

@@ -1,44 +1,47 @@
-from fastapi import APIRouter, Response
-from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
+from fastapi import APIRouter, Depends, HTTPException, Path
+from config.db import SessionLocal
+from sqlalchemy.orm import Session
 from schemas.schema import BuildingSchema
-from config.db import engine
-from models.models import building
-from typing import List
+from crud.building import get_building, get_buildings, create_building, update_building, delete_building
 
 router = APIRouter()
 
-@router.get("/", response_model=List[BuildingSchema])
-async def get_all_building():
-    with engine.connect() as conn:
-        query = building.select()
-        return conn.execute(query).fetchall()
-    
-@router.get("/{idbuilding}", response_model = BuildingSchema)
-async def get_building(idbuilding: int):
-    with engine.connect() as conn:
-        query = building.select().where(building.c.idbuilding == idbuilding)
-        return conn.execute(query).first()
-    
-@router.post("/", status_code = HTTP_201_CREATED)
-async def create_building(data_building: BuildingSchema):
-    with engine.connect() as conn:
-        new_building = data_building.model_dump()
-        conn.execute(building.insert().values(new_building))
-        conn.commit()
-        return Response(status_code=HTTP_201_CREATED)
+def get_db():
+    try:
+        db = SessionLocal()
+        yield db
+    finally:
+        db.close()
 
-@router.put("/{idbuilding}", response_model = BuildingSchema)
-async def update_building(idbuilding: int, data_building: BuildingSchema):
-    with engine.connect() as conn:
-        query = building.update().where(building.c.idbuilding == idbuilding).values(data_building.model_dump())
-        conn.execute(query)
-        conn.commit()
-        return {"message": "Building updated successfully"}
+@router.get("/{building_id}", response_model=BuildingSchema)
+async def get_building_by_id(building_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    db_building = get_building(db, building_id)
+    if db_building is None:
+        raise HTTPException(status_code=404, detail="Building not found")
+    return db_building
 
-@router.delete("/{idbuilding}", status_code=HTTP_204_NO_CONTENT)
-async def delete_building(idbuilding: int):
-    with engine.connect() as conn:
-        query = building.delete().where(building.c.idbuilding == idbuilding)
-        conn.execute(query)
-        conn.commit()
-        return Response(status_code=HTTP_204_NO_CONTENT)
+@router.get("/", response_model=list[BuildingSchema])
+async def get_all_buildings(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_buildings = get_buildings(db, skip, limit)
+    return db_buildings
+
+@router.post("/", response_model=BuildingSchema, status_code=201)
+async def create_new_building(building: BuildingSchema, db: Session = Depends(get_db)):
+    db_building = create_building(db, building)
+    return db_building
+
+@router.put("/{building_id}", response_model=BuildingSchema)
+async def update_building_by_id(building_id: int = Path(..., gt=0), building: BuildingSchema = Depends(), db: Session = Depends(get_db)):
+    db_building = get_building(db, building_id)
+    if db_building is None:
+        raise HTTPException(status_code=404, detail="Building not found")
+    db_building = update_building(db, building_id, building)
+    return db_building
+
+@router.delete("/{building_id}", response_model=BuildingSchema)
+async def delete_building_by_id(building_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    db_building = get_building(db, building_id)
+    if db_building is None:
+        raise HTTPException(status_code=404, detail="Building not found")
+    db_building = delete_building(db, building_id)
+    return db_building

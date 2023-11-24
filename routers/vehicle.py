@@ -1,45 +1,47 @@
-from fastapi import APIRouter, Response
-from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
+from fastapi import APIRouter, Depends, HTTPException, Path
+from config.db import SessionLocal
+from sqlalchemy.orm import Session
 from schemas.schema import VehicleSchema
-from config.db import engine
-from models.models import vehicle
-from typing import List
-# from werkzeug.utils import generate_password_hash, check_password_hash
+from crud.vehicle import get_vehicle, get_vehicles, create_vehicle, update_vehicle, delete_vehicle
 
 router = APIRouter()
 
-@router.get("/", response_model=List[VehicleSchema])
-async def get_all_vehicle():
-    with engine.connect() as conn:
-        query = vehicle.select()
-        return conn.execute(query).fetchall()
-    
-@router.get("/{idvehicle}", response_model=VehicleSchema)
-async def get_vehicle(idvehicle: int):
-    with engine.connect() as conn:
-        query = vehicle.select().where(vehicle.c.idvehicle == idvehicle)
-        return conn.execute(query).first()
-    
-@router.post("/", status_code=HTTP_201_CREATED)
-async def create_vehicle(data_vehicle: VehicleSchema):
-    with engine.connect() as conn:
-        new_vehicle = data_vehicle.model_dump()
-        conn.execute(vehicle.insert().values(new_vehicle))
-        conn.commit()
-        return Response(status_code=HTTP_201_CREATED)
+def get_db():
+    try:
+        db = SessionLocal()
+        yield db
+    finally:
+        db.close()
 
-@router.put("/{idvehicle}", response_model=VehicleSchema)
-async def update_vehicle(idvehicle: int, data_vehicle: VehicleSchema):
-    with engine.connect() as conn:
-        query = vehicle.update().where(vehicle.c.idvehicle == idvehicle).values(data_vehicle.model_dump())
-        conn.execute(query)
-        conn.commit()
-        return {"message": "Vehicle updated successfully"}
+@router.get("/{vehicle_id}", response_model=VehicleSchema)
+async def get_vehicle_by_id(vehicle_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    db_vehicle = get_vehicle(db, vehicle_id)
+    if db_vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    return db_vehicle
 
-@router.delete("/{idvehicle}", status_code=HTTP_204_NO_CONTENT)
-async def delete_vehicle(idvehicle: int):
-    with engine.connect() as conn:
-        query = vehicle.delete().where(vehicle.c.idvehicle == idvehicle)
-        conn.execute(query)
-        conn.commit()
-        return Response(status_code=HTTP_204_NO_CONTENT)
+@router.get("/", response_model=list[VehicleSchema])
+async def get_all_vehicles(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_vehicles = get_vehicles(db, skip, limit)
+    return db_vehicles
+
+@router.post("/", response_model=VehicleSchema, status_code=201)
+async def create_new_vehicle(vehicle: VehicleSchema, db: Session = Depends(get_db)):
+    db_vehicle = create_vehicle(db, vehicle)
+    return db_vehicle
+
+@router.put("/{vehicle_id}", response_model=VehicleSchema)
+async def update_vehicle_by_id(vehicle_id: int = Path(..., gt=0), vehicle: VehicleSchema = Depends(), db: Session = Depends(get_db)):
+    db_vehicle = get_vehicle(db, vehicle_id)
+    if db_vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    db_vehicle = update_vehicle(db, vehicle_id, vehicle)
+    return db_vehicle
+
+@router.delete("/{vehicle_id}", response_model=VehicleSchema)
+async def delete_vehicle_by_id(vehicle_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    db_vehicle = get_vehicle(db, vehicle_id)
+    if db_vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    db_vehicle = delete_vehicle(db, vehicle_id)
+    return db_vehicle

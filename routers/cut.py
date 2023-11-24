@@ -1,44 +1,47 @@
-from fastapi import APIRouter, Response
-from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
+from fastapi import APIRouter, Depends, HTTPException, Path
+from config.db import SessionLocal
+from sqlalchemy.orm import Session
 from schemas.schema import CutSchema
-from config.db import engine
-from models.models import cut
-from typing import List
+from crud.cut import get_cut, get_cuts, create_cut, update_cut, delete_cut
 
 router = APIRouter()
 
-@router.get("/", response_model=List[CutSchema])
-async def get_all_cut():
-    with engine.connect() as conn:
-        query = cut.select()
-        return conn.execute(query).fetchall()
-    
-@router.get("/{idcut}", response_model=CutSchema)
-async def get_cut(idcut: int):
-    with engine.connect() as conn:
-        query = cut.select().where(cut.c.idcut == idcut)
-        return conn.execute(query).first()
-    
-@router.post("/", status_code=HTTP_201_CREATED)
-async def create_cut(data_cut: CutSchema):
-    with engine.connect() as conn:
-        new_cut = data_cut.model_dump()
-        conn.execute(cut.insert().values(new_cut))
-        conn.commit()
-        return Response(status_code=HTTP_201_CREATED)
+def get_db():
+    try:
+        db = SessionLocal()
+        yield db
+    finally:
+        db.close()
 
-@router.put("/{idcut}", response_model=CutSchema)
-async def update_cut(idcut: int, data_cut: CutSchema):
-    with engine.connect() as conn:
-        query = cut.update().where(cut.c.idcut == idcut).values(data_cut.model_dump())
-        conn.execute(query)
-        conn.commit()
-        return {"message": "Cut updated successfully"}
+@router.get("/{cut_id}", response_model=CutSchema)
+async def get_cut_by_id(cut_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    db_cut = get_cut(db, cut_id)
+    if db_cut is None:
+        raise HTTPException(status_code=404, detail="Cut not found")
+    return db_cut
 
-@router.delete("/{idcut}", status_code=HTTP_204_NO_CONTENT)
-async def delete_cut(idcut: int):
-    with engine.connect() as conn:
-        query = cut.delete().where(cut.c.idcut == idcut)
-        conn.execute(query)
-        conn.commit()
-        return Response(status_code=HTTP_204_NO_CONTENT)
+@router.get("/", response_model=list[CutSchema])
+async def get_all_cuts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_cuts = get_cuts(db, skip, limit)
+    return db_cuts
+
+@router.post("/", response_model=CutSchema, status_code=201)
+async def create_new_cut(cut: CutSchema, db: Session = Depends(get_db)):
+    db_cut = create_cut(db, cut)
+    return db_cut
+
+@router.put("/{cut_id}", response_model=CutSchema)
+async def update_cut_by_id(cut_id: int = Path(..., gt=0), cut: CutSchema = Depends(), db: Session = Depends(get_db)):
+    db_cut = get_cut(db, cut_id)
+    if db_cut is None:
+        raise HTTPException(status_code=404, detail="Cut not found")
+    db_cut = update_cut(db, cut_id, cut)
+    return db_cut
+
+@router.delete("/{cut_id}", response_model=CutSchema)
+async def delete_cut_by_id(cut_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    db_cut = get_cut(db, cut_id)
+    if db_cut is None:
+        raise HTTPException(status_code=404, detail="Cut not found")
+    db_cut = delete_cut(db, cut_id)
+    return db_cut

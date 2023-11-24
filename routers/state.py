@@ -1,44 +1,47 @@
-from fastapi import APIRouter, Response
-from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
+from fastapi import APIRouter, Depends, HTTPException, Path
+from config.db import SessionLocal
+from sqlalchemy.orm import Session
 from schemas.schema import StateSchema
-from config.db import engine
-from models.models import state
-from typing import List
+from crud.state import get_state, get_states, create_state, update_state, delete_state
 
 router = APIRouter()
 
-@router.get("/", response_model=List[StateSchema])
-async def get_all_state():
-    with engine.connect() as conn:
-        query = state.select()
-        return conn.execute(query).fetchall()
-    
-@router.get("/{idstate}", response_model = StateSchema)
-async def get_state(idstate: int):
-    with engine.connect() as conn:
-        query = state.select().where(state.c.idstate == idstate)
-        return conn.execute(query).first()
-    
-@router.post("/", status_code = HTTP_201_CREATED)
-async def create_state(data_state: StateSchema):
-    with engine.connect() as conn:
-        new_state = data_state.model_dump()
-        conn.execute(state.insert().values(new_state))
-        conn.commit()
-        return Response(status_code=HTTP_201_CREATED)
+def get_db():
+    try:
+        db = SessionLocal()
+        yield db
+    finally:
+        db.close()
 
-@router.put("/{idstate}", response_model = StateSchema)
-async def update_state(idstate: int, data_state: StateSchema):
-    with engine.connect() as conn:
-        query = state.update().where(state.c.idstate == idstate).values(data_state.model_dump())
-        conn.execute(query)
-        conn.commit()
-        return {"message": "State updated successfully"}
+@router.get("/{state_id}", response_model=StateSchema)
+async def get_state_by_id(state_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    db_state = get_state(db, state_id)
+    if db_state is None:
+        raise HTTPException(status_code=404, detail="State not found")
+    return db_state
 
-@router.delete("/{idstate}", status_code=HTTP_204_NO_CONTENT)
-async def delete_state(idstate: int):
-    with engine.connect() as conn:
-        query = state.delete().where(state.c.idstate == idstate)
-        conn.execute(query)
-        conn.commit()
-        return Response(status_code=HTTP_204_NO_CONTENT)
+@router.get("/", response_model=list[StateSchema])
+async def get_all_states(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    db_states = get_states(db, skip, limit)
+    return db_states
+
+@router.post("/", response_model=StateSchema, status_code=201)
+async def create_new_state(state: StateSchema, db: Session = Depends(get_db)):
+    db_state = create_state(db, state)
+    return db_state
+
+@router.put("/{state_id}", response_model=StateSchema)
+async def update_state_by_id(state_id: int = Path(..., gt=0), state: StateSchema = Depends(), db: Session = Depends(get_db)):
+    db_state = get_state(db, state_id)
+    if db_state is None:
+        raise HTTPException(status_code=404, detail="State not found")
+    db_state = update_state(db, state_id, state)
+    return db_state
+
+@router.delete("/{state_id}", response_model=StateSchema)
+async def delete_state_by_id(state_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    db_state = get_state(db, state_id)
+    if db_state is None:
+        raise HTTPException(status_code=404, detail="State not found")
+    db_state = delete_state(db, state_id)
+    return db_state
